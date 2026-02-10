@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+function createIcon(size) {
+  const canvas = document.getElementById('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  
+  // Background gradient
+  const gradient = ctx.createLinearGradient(0, 0, size, size);
+  gradient.addColorStop(0, '#3b82f6');
+  gradient.addColorStop(1, '#2563eb');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  
+  // Chart symbol
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = size / 16;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  
+  ctx.beginPath();
+  ctx.moveTo(size * 0.2, size * 0.7);
+  ctx.lineTo(size * 0.4, size * 0.5);
+  ctx.lineTo(size * 0.6, size * 0.6);
+  ctx.lineTo(size * 0.8, size * 0.3);
+  ctx.stroke();
+  
+  return canvas.toDataURL();
+}
+
+// This would be run in a browser to generate icons
+// For now, we'll create placeholder icons using ImageMagick
+</script>
+</body>
+</html>
