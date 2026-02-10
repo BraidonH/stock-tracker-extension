@@ -220,3 +220,4 @@ Potential features for future versions:
 ---
 
 **Enjoy tracking your stocks!** 📈✨
+# stock-tracker-extension
