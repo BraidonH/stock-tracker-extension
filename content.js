@@ -133,6 +133,7 @@ function toggleTickerView() {
   stockTickerTop.innerHTML = tickerHTML;
   document.body.insertBefore(stockTickerTop, document.body.firstChild);
   console.log("[ST.IO] Ticker view opened");
+  chrome.storage.local.set({ tickerView: true });
 }
 
 document.addEventListener("keydown", (e) => {
@@ -162,29 +163,33 @@ function toggleWidget() {
   }
 }
 
-// Fetch stock data from background script
+// Fetch stock data from background script. Returns a Promise that resolves after updateStockDisplay.
 function fetchStockPrice(symbol) {
   console.log(`[ST.IO] Fetching price for ${symbol}...`);
 
-  chrome.runtime.sendMessage(
-    { action: "fetchStock", symbol: symbol },
-    (response) => {
-      console.log("[ST.IO] Background response:", response);
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      { action: "fetchStock", symbol: symbol },
+      (response) => {
+        console.log("[ST.IO] Background response:", response);
 
-      if (response && response.success && response.data) {
-        console.log(
-          `[ST.IO] ${symbol} Price:`,
-          response.data.regularMarketPrice,
-        );
-        updateStockDisplay(symbol, response.data);
-      } else {
-        console.error(
-          "[ST.IO] Failed to fetch stock:",
-          response?.error || "Unknown error",
-        );
-      }
-    },
-  );
+        if (response && response.success && response.data) {
+          console.log(
+            `[ST.IO] ${symbol} Price:`,
+            response.data.regularMarketPrice,
+          );
+          updateStockDisplay(symbol, response.data);
+          resolve();
+        } else {
+          console.error(
+            "[ST.IO] Failed to fetch stock:",
+            response?.error || "Unknown error",
+          );
+          reject(response?.error || "Unknown error");
+        }
+      },
+    );
+  });
 }
 
 function updateStockDisplay(symbol, data) {
@@ -227,33 +232,48 @@ function updateStockDisplay(symbol, data) {
 
 popupWidget.addEventListener("click", toggleWidget);
 
-(function init() {
+(async function init() {
   console.log("[ST.IO] Initializing Stock Tracker Widget...");
-  chrome.storage.local.get(null, (items) => {
-    // If there's an error reading storage, log and stop.
-    if (chrome.runtime.lastError) {
-      console.error(chrome.runtime.lastError);
-      return;
-    }
 
-    // Collect stored stock entries and render them. If stored data
-    // includes a price object, render immediately; otherwise refetch.
-    const stockEntries = Object.keys(items)
-      .filter((k) => k.startsWith("stock_"))
-      .map((k) => ({
-        key: k,
-        symbol: k.replace(/^stock_/, ""),
-        value: items[k],
-      }));
-    console.log("[ST.IO] Stored stocks:", stockEntries);
-
-    stockEntries.forEach((entry) => {
-      if (entry.value && entry.value.regularMarketPrice != null) {
-        updateStockDisplay(entry.symbol, entry.value);
-      } else {
-        // If we don't have stored price data, fetch fresh data.
-        fetchStockPrice(entry.symbol);
-      }
+  const items = await new Promise((resolve, reject) => {
+    chrome.storage.local.get(null, (result) => {
+      if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+      else resolve(result);
     });
   });
+
+  const stockEntries = Object.keys(items)
+    .filter((k) => k.startsWith("stock_"))
+    .map((k) => ({
+      key: k,
+      symbol: k.replace(/^stock_/, ""),
+      value: items[k],
+    }));
+  console.log("[ST.IO] Stored stocks:", stockEntries);
+
+  const updatePromises = stockEntries.map((entry) => {
+    if (entry.value && entry.value.regularMarketPrice != null) {
+      updateStockDisplay(entry.symbol, entry.value);
+      return Promise.resolve();
+    }
+    return fetchStockPrice(entry.symbol);
+  });
+  await Promise.all(updatePromises);
+
+  const { tickerView } = await new Promise((resolve, reject) => {
+    chrome.storage.local.get("tickerView", (result) => {
+      if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+      else resolve(result);
+    });
+  });
+  console.log("[ST.IO] Ticker view:", tickerView);
+  if (tickerView) { 
+    toggleTickerView();
+    const tickerScroll = document.querySelector(".ticker-scroll");
+    const windowWidth = window.innerWidth;
+    const tickerScrollWidth = tickerScroll.offsetWidth;
+    if (tickerScrollWidth > windowWidth) {
+      console.log("[ST.IO] Ticker scroll width is greater than window width");
+    }
+  }
 })();
