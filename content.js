@@ -136,6 +136,21 @@ function toggleTickerView() {
   chrome.storage.local.set({ tickerView: true });
 }
 
+function updateTickerView(item) {
+  const stockTickerTop = document.querySelector(".stock-ticker-top");
+  console.log("[ST.IO] Updating ticker view with:", item);
+  if (stockTickerTop) {
+    let tickerHTML = '<div class="ticker-scroll">';
+    tickerHTML += `
+      <div class="ticker-item">
+        <span class="ticker-symbol">${item.symbol}</span>
+        <span class="ticker-price">${item.price}</span>
+        <span class="ticker-change" style="color: ${changeColor};">${changeText}</span>
+      </div>
+    `;
+  }
+}
+
 document.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && stockInput.value.trim().toUpperCase()) {
     fetchStockPrice(stockInput.value.trim().toUpperCase());
@@ -227,6 +242,7 @@ function updateStockDisplay(symbol, data) {
       ${change > 0 ? "+" : ""}${change.toFixed(2)} (${changePercent > 0 ? "+" : ""}${changePercent.toFixed(2)}%)
     </div>
   `;
+  updateTickerView(data);
   stockList.insertBefore(stockItem, stockList.firstChild);
 }
 
@@ -267,13 +283,15 @@ popupWidget.addEventListener("click", toggleWidget);
     });
   });
   console.log("[ST.IO] Ticker view:", tickerView);
-  if (tickerView) { 
-    toggleTickerView();
-    const tickerScroll = document.querySelector(".ticker-scroll");
-    const windowWidth = window.innerWidth;
-    const tickerScrollWidth = tickerScroll.offsetWidth;
-    if (tickerScrollWidth > windowWidth) {
-      console.log("[ST.IO] Ticker scroll width is greater than window width");
-    }
-  }
+
+  // scrolling animation if ticker is wider than screen
+  // if (tickerView) {
+  //   toggleTickerView();
+  //   const tickerScroll = document.querySelector(".ticker-scroll");
+  //   const windowWidth = window.innerWidth;
+  //   const tickerScrollWidth = tickerScroll.offsetWidth;
+  //   if (tickerScrollWidth > windowWidth) {
+  //     console.log("[ST.IO] Ticker scroll width is greater than window width");
+  //   }
+  // }
 })();

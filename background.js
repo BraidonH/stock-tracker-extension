@@ -11,21 +11,6 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 
-chrome.storage.local.get(null, (items) => {
-  if (chrome.runtime.lastError) {
-    console.error(chrome.runtime.lastError);
-    const stockEntries = Object.keys(items)
-      .filter((k) => k.startsWith("stock_"))
-      .map((k) => ({
-        key: k,
-        symbol: k.replace(/^stock_/, ""),
-        value: items[k],
-      }));
-    console.log(stockEntries);
-    updateStockDisplay(null, null, true, stockEntries);
-  }
-});
-
 // Handle messages from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "fetchStock") {
@@ -33,7 +18,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log(`[Background] Fetching stock data for ${symbol}...`);
 
     // Fetch stock data from TwelveData API
-    const apiKey = "1d9eb49d356043578c187856bdfffbfc";
+
     const apiUrl = `https://api.twelvedata.com/price?symbol=${symbol}&apikey=${apiKey}`;
     console.log(`[Background] API URL: ${apiUrl}`);
 
