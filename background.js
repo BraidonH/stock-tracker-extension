@@ -1,3 +1,9 @@
+require("dotenv").config(); // Loads the variables from .env into process.env
+
+const apiKey = process.env.API_KEY;
+console.log("This is logging");
+console.log(apiKey);
+
 // Listen for extension installation
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
